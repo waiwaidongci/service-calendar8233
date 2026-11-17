@@ -1,6 +1,10 @@
 import {request} from './client.js';
-export const loadAll=async()=>Object.fromEntries(await Promise.all(['sources','periods','policies','runs','schedules','deliveries','audits'].map(async k=>[k,await request('/'+k)])));
+export const loadAll=async()=>Object.fromEntries(await Promise.all(['sources','periods','policies','runs','schedules','deliveries','audits','clock/requests'].map(async k=>[k,await request('/'+k)])));
 export const saveSource=(data,id)=>request('/sources'+(id?'/'+id:''),id?'PUT':'POST',{data});
 export const savePolicy=data=>request('/policies','POST',{data});
 export const submitRun=data=>request('/runs','POST',data);
 export const approveRun=(id,note)=>request('/runs/'+id+'/approve','POST',{note});
+export const receiveClockEvents=events=>request('/clock/events','POST',{events});
+export const clockRequest=no=>request('/clock/requests/'+encodeURIComponent(no));
+export const rebuildClock=no=>request('/clock/requests/'+encodeURIComponent(no)+'/rebuild','POST',{});
+export const runClockJobs=()=>request('/clock/run-jobs','POST',{});

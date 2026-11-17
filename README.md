@@ -12,6 +12,18 @@
 
 业务时钟 · 午休与假日显式扣除。输入：业务底稿与口径JSON；输出：summary、透视rows、method、warnings。算法实现在`backend/src/services/calculation.py`，输入校验在`validation.py`。固定seed=42，240条合成数据；未对接真实业务系统。修改源数据和新建因子/口径不会改变已提交报告。
 
+### 事件业务时钟（`#clock`）
+只接收带请求号、事件号、修订号的事件：`open`（开单，携带期间/小组/优先级/可选口径版本）、`pause`、`resume`、`close`、`revoke`。接收接口`POST /api/clock/events`（1–500条/批），页面可单条补发或批量粘贴JSON。
+
+- 按**发生时间**重放而非到达顺序，晚到事件自动补齐；`occurred_at`必须带时区。
+- 暂停区间先与工作日历（时区、工作星期、工作时窗、假日）**求交**，再从毛业务分钟中扣除；有效分钟等于各计费段与日历交集之和。恰等于SLA阈值不算超时。
+- 同请求号+事件号+修订号内容一致视为重复投递，不重复计入；同版异值隔离该请求并保留原因，提升修订号即可更正。
+- 非法状态链（重复开单、无开单暂停/关闭、暂停中恢复等）整条请求隔离并保存原因；未关闭与已撤销请求不计入汇总。
+- 每次变更生成不可变发布版本 `clock_releases`：事件修订映射、计时段明细、毛/暂停/有效分钟与汇总贡献在同一事务内写入；旧版本标记为失效但保留。并发由 `change_seq + version` 双CAS与租约保证，迟到计算不会覆盖新版本。
+- 重建任务持久化在 `clock_jobs`，按请求号去重；进程中断后租约过期自动回收，worker与`处理积压重建任务`按钮均可续跑。十万事件下更正只重算受影响的请求。
+- 事件时钟报告在提交时冻结**接收截止点**；截止后的补发/更正只影响新报告与后续交付，旧报告与已生成交付保持原快照，可继续按其冻结口径与分钟依据核算。
+- 页面`事件时钟`可补发、更正、立即重建、导出分钟依据CSV，并按版本追查每个计时段起止事件与修订号；`核算与复核`可在事件时钟报告中查看逐请求分钟依据与隔离清单。
+
 ## 一天的验收剧本
 1. 09:00 admin查看240条seed底稿与具名业务期间。
 2. 09:10 analyst添加`service-calendar-202611.csv`的一条具名业务记录。
@@ -21,6 +33,11 @@
 6. 09:40 admin核对数值后填写至少4字复核说明。
 7. 09:45 admin建立60秒周期计划，worker到期生成站内持久化交付。
 8. 09:46 viewer在站内收件箱下载交付CSV；审计页查看操作者与时间。
+
+## 测试
+```sh
+cd backend && PROJECT_CONFIG=project.json DATABASE_URL=sqlite:////tmp/clock.db JWT_SECRET=test python3 -m pytest tests -q
+```
 
 ## 快速启动
 ```sh
@@ -51,4 +68,4 @@ MIT License。
 ## 实际实体映射
 来源记录（Source，专属业务字段校验）、口径版本（Policy）、核算报告（Run）、交付计划（Schedule）、交付（Delivery）均经数据库→模型→请求schema→service→route/controller→frontend API→store→page。Period为已有来源期间字典，在任务期间选择器使用；不单独作为复杂度计数。底稿JSON为小型多字段单记录存储，不虚构未落库的子实体。
 
-实际表：期间字典 service_periods；专属来源 service_cases；冻结口径 business_calendars；异步报告 sla_runs。
+实际表：期间字典 service_periods；专属来源 service_cases；冻结口径 business_calendars；异步报告 sla_runs；事件时钟 clock_requests / clock_events / clock_releases / clock_segments / clock_jobs。

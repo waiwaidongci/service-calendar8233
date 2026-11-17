@@ -5,7 +5,7 @@ from src.controllers.auth import current,admin
 from src.models.run import Schedule,Delivery
 from src.schemas.requests import ScheduleInput
 from src.services.delivery import add_schedule
-from src.services.export import csv_text
+from src.services.export import csv_text,csv_rows
 from src.utils.serialize import row
 router=APIRouter()
 @router.get('/schedules')
@@ -23,4 +23,8 @@ def deliveries(db=Depends(database),u=Depends(current)): return [row(x) for x in
 def download(id:int,db=Depends(database),u=Depends(current)):
  obj=db.get(Delivery,id)
  if not obj: raise HTTPException(404,'交付不存在')
+ if obj.payload.get('kind')=='clock':
+  result=obj.payload.get('result') or {}
+  rows=list(result.get('trace') or [])+list(result.get('quarantined') or [])
+  return Response(csv_rows(rows,'尚无结果'),media_type='text/csv',headers={'Content-Disposition':f'attachment; filename="delivery-{id}.csv"'})
  return Response(csv_text(obj.payload['result']),media_type='text/csv',headers={'Content-Disposition':f'attachment; filename="delivery-{id}.csv"'})

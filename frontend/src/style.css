@@ -4,3 +4,14 @@
 .page-heading{border-left:10px double var(--accent);padding-left:25px}.sidebar{border-right:8px double var(--accent)}.topline{border-bottom:3px double var(--ink)}.inbox article{border-top:1px dashed var(--accent);border-bottom:1px dashed var(--accent)}.metrics>div{border-left:0;border-top:4px solid var(--accent);padding:14px 5px}.overview-count{border-top:0;border-right:2px solid var(--accent);padding-right:20px}.login-story{background:var(--paper);color:var(--ink);border-right:25px solid var(--ink)}.login-form{background:color-mix(in oklch,var(--accent) 10%,var(--paper))}
 
 .policy-row{display:flex;flex-wrap:wrap;gap:15px;align-items:end;border-bottom:1px solid var(--line);padding:12px 0}.policy-row label{flex:1;min-width:140px}.policy-row button{font-size:11px;margin-bottom:14px;background:transparent;color:var(--ink)}#add-policy-row{background:transparent;color:var(--accent);border-color:var(--accent);margin:15px 0 25px}fieldset{border:1px solid var(--line);margin:20px 0}.weekday{display:inline-flex;align-items:center;margin:10px}.weekday input{width:auto;margin:0 6px 0 0}input[type=number]{appearance:textfield}
+
+/* 事件时钟：补发/更正工作台 */
+.clock-toolbar{display:flex;align-items:center;gap:18px;border-block:1px solid var(--line);padding:14px 0;margin-bottom:22px}
+.clock-toolbar button{font-size:12px;padding:8px 14px;background:transparent;color:var(--accent);border-color:var(--accent)}
+.clock-actions{display:flex;gap:12px;margin:18px 0}
+.clock-actions button{font-size:12px;padding:8px 14px}
+.version-badge{font:11px monospace;color:var(--muted)}.cutoff{font-size:11px!important;color:var(--accent)}
+.run-list button small{display:block;font:10px 'DM Sans',sans-serif;opacity:.6;margin-top:4px}
+.hint{font-size:11px;color:var(--muted);line-height:1.7}
+.status.closed,.status.open,.status.paused,.status.revoked,.status.quarantined{background:color-mix(in oklch,var(--accent) 12%,var(--paper))}
+.status.quarantined{color:oklch(.5 .18 25)}

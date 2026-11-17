@@ -7,6 +7,10 @@ def add_schedule(db,user,body):
  if not run or not run.approved: raise HTTPException(409,'定时交付需引用已复核报告')
  obj=Schedule(name=body.name,run_id=run.id,interval_seconds=body.interval_seconds,next_at=time.time()+body.interval_seconds,enabled=True)
  db.add(obj);log(db,user.email,'schedule.create',body.name);db.commit();return obj
+def snapshot_payload(run):
+ payload={'name':run.name,'checksum':run.checksum,'result':run.result,'review':run.review,'policy':run.snapshot['policy'],'kind':run.kind or 'draft'}
+ if run.snapshot.get('kind')=='clock':payload['cutoff']=run.snapshot.get('cutoff');payload['period']=run.snapshot.get('period')
+ return payload
 def tick(db):
  now=time.time()
  for schedule in db.query(Schedule).filter(Schedule.enabled==True,Schedule.next_at<=now).all():
@@ -14,7 +18,8 @@ def tick(db):
   if run and run.approved and run.status=='completed':
    key=f'{schedule.id}:{schedule.next_at}'
    if not db.query(Delivery).filter_by(due_key=key).first():
-    db.add(Delivery(schedule_id=schedule.id,run_id=run.id,due_key=key,created=now,payload={'name':run.name,'checksum':run.checksum,'result':run.result,'review':run.review,'policy':run.snapshot['policy']}))
+    # 交付引用提交时冻结的已验证快照，后续补发/更正不改变已生成交付。
+    db.add(Delivery(schedule_id=schedule.id,run_id=run.id,due_key=key,created=now,payload=snapshot_payload(run)))
     log(db,'worker','delivery.created',key)
   schedule.next_at=now+schedule.interval_seconds
  db.commit()

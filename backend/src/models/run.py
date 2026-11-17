@@ -3,6 +3,8 @@ from src.config.database import Base
 class Run(Base):
  __tablename__='sla_runs'
  id=Column(Integer,primary_key=True); name=Column(String(120)); status=Column(String(20)); snapshot=Column(JSON); checksum=Column(String(64)); result=Column(JSON); error=Column(Text); created=Column(Float); approved=Column(Boolean,default=False); review=Column(Text,default='')
+ # kind='draft' 为原底稿核算；kind='clock' 为事件业务时钟报告，cutoff 为接收截止点
+ kind=Column(String(20),nullable=False,default='draft'); cutoff=Column(Float); period=Column(String(40))
 class Schedule(Base):
  __tablename__='delivery_schedules'
  id=Column(Integer,primary_key=True); name=Column(String(120)); run_id=Column(Integer); interval_seconds=Column(Integer); next_at=Column(Float); enabled=Column(Boolean,default=True)
